@@ -14,19 +14,17 @@ class ToolDetection(ScriptedLoadableModule):
   
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
-    self.parent.title = "ToolDetection" # TODO make this more human readable by adding spaces
+    self.parent.title = "ToolDetection" 
     self.parent.categories = ["ToolDetection"]
     self.parent.dependencies = []
-    self.parent.contributors = ["John Doe (AnyWare Corp.)"] # replace with "Firstname Lastname (Organization)"
+    self.parent.contributors = ["David Garcia Mato (Universidad Carlos III de Madrid, Spain) and Tamas Ungi (Queens University, Canada)"] 
     self.parent.helpText = """
-    This is an example of scripted loadable module bundled in an extension.
-    It performs a simple thresholding on the input volume and optionally captures a screenshot.
+    Scripted module to classify images in real-time using a selected model for the prediction.
     """
     self.parent.helpText += self.getDefaultModuleDocumentationLink()
     self.parent.acknowledgementText = """
-    This file was originally developed by Jean-Christophe Fillion-Robin, Kitware Inc.
-    and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR013218-12S1.
-    """ # replace with organization, grant and thanks.
+    This file was originally developed by David Garcia Mato (Universidad Carlos III de Madrid, Spain) and Tamas Ungi (Queens University, Canada)
+    """ 
 
 #
 # ToolDetectionWidget
@@ -94,6 +92,9 @@ class ToolDetectionWidget(ScriptedLoadableModuleWidget):
     self.applyButton.enabled = True
     parametersFormLayout.addRow(self.applyButton)
     
+    #
+    # Output label
+    #
     self.classLabel = qt.QLabel("-")
     classFont = self.classLabel.font
     classFont.setPointSize(32)
@@ -117,26 +118,21 @@ class ToolDetectionWidget(ScriptedLoadableModuleWidget):
     else:
       self.classLabel.setText("")
     
-
   def onImageThresholdValueChanged(self, value):
-    
     self.logic.predictionThreshold = self.imageThresholdSliderWidget.value
-  
-  
+    
   def setDetection(self, currentState):
     self.detectionOn = currentState
     if self.detectionOn is True:
       self.applyButton.setText("Stop detection")
     else:
       self.applyButton.setText("Start detection")
-  
-  
+    
   def onApplyButton(self):
     imageThreshold = self.imageThresholdSliderWidget.value
     modelFilePath = self.modelPathEdit.currentPath
     
     # Try to load Keras model
-    
     success = self.logic.loadKerasModel(modelFilePath)
     if not success:
       logging.error("Failed to load Keras model: {}".format(modelFilePath))
@@ -166,7 +162,6 @@ class ToolDetectionWidget(ScriptedLoadableModuleWidget):
 #
 # ToolDetectionLogic
 #
-
 class ToolDetectionLogic(ScriptedLoadableModuleLogic):
   
   def __init__(self):
@@ -178,11 +173,9 @@ class ToolDetectionLogic(ScriptedLoadableModuleLogic):
     self.model_input_size = None
     self.classes = ['1', '2', '3', '4', 'None']
     self.predictionThreshold = 0.0
-
   
   def getLastClass(self):
     return [self.lastClass, self.lastClassProbability]
-  
   
   def loadKerasModel(self, modelFilePath):
     """
@@ -197,7 +190,6 @@ class ToolDetectionLogic(ScriptedLoadableModuleLogic):
       return False
     
     return True
-  
 
   def hasImageData(self,volumeNode):
     """This is an example logic method that
@@ -225,7 +217,6 @@ class ToolDetectionLogic(ScriptedLoadableModuleLogic):
       logging.debug('isValidInputOutputData failed: input and output volume is the same. Create a new volume for output to avoid this error.')
       return False
     return True
-
 
   def run(self, inputVolumeNode, imageThreshold):
     """
@@ -267,13 +258,11 @@ class ToolDetectionLogic(ScriptedLoadableModuleLogic):
     
     return True
 
-
   def preprocess_input(self, x):
     x /= 255.
     x -= 0.5
     x *= 2.
     return x
-  
   
   def onImageModified(self, caller, event):
     image_node = slicer.util.getNode(self.lastObservedVolumeId)
@@ -305,51 +294,6 @@ class ToolDetectionLogic(ScriptedLoadableModuleLogic):
       self.lastClass = "None"      
       self.lastClassProbability = "-"
 
-    print(prediction)
     print("Prediction: {} at {:2.2%} probability".format(self.lastClass, maxPrediction))
-    
 
-class ToolDetectionTest(ScriptedLoadableModuleTest):
-  """
-  This is the test case for your scripted module.
-  Uses ScriptedLoadableModuleTest base class, available at:
-  https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
-  """
 
-  def setUp(self):
-    """ Do whatever is needed to reset the state - typically a scene clear will be enough.
-    """
-    slicer.mrmlScene.Clear(0)
-
-  def runTest(self):
-    """Run as few or as many tests as needed here.
-    """
-    self.setUp()
-    self.test_ToolDetection1()
-
-  def test_ToolDetection1(self):
-    """ Ideally you should have several levels of tests.  At the lowest level
-    tests should exercise the functionality of the logic with different inputs
-    (both valid and invalid).  At higher levels your tests should emulate the
-    way the user would interact with your code and confirm that it still works
-    the way you intended.
-    One of the most important features of the tests is that it should alert other
-    developers when their changes will have an impact on the behavior of your
-    module.  For example, if a developer removes a feature that you depend on,
-    your test should break so they know that the feature is needed.
-    """
-
-    self.delayDisplay("Starting the test")
-    #
-    # first, get some data
-    #
-    import SampleData
-    SampleData.downloadFromURL(
-      nodeNames='FA',
-      fileNames='FA.nrrd',
-      uris='http://slicer.kitware.com/midas3/download?items=5767')
-    self.delayDisplay('Finished with download and loading')
-
-    volumeNode = slicer.util.getNode(pattern="FA")
-    self.assertIsNotNone( self.logic.hasImageData(volumeNode) )
-    self.delayDisplay('Test passed!')
